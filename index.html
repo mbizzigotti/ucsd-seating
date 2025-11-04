@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>UCSD Seating</title>
+        <style>
+            body {
+                font-family: sans-serif;
+                background-color: black;
+                color: white;
+            }
+            .center {   
+                text-align: center;
+            }
+            p {
+                margin: 0;
+                font-size: calc(min(50vw, 50vh));
+            }
+            select {
+                position: absolute;
+                left: 1em;
+                top: 1em;
+                background-color: black;
+                color: white;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="center">
+            <h1>Your seat is</h1>
+            <p id="seat">...</p>
+        </div>
+        <select id="select">
+            <option value="CENTR101">Center 101</option>
+            <option value="GH242" selected>Galbraith 242</option>
+        </select>
+    </body>
+    <script>
+        const LETTER = 0;
+        const START = 1;
+        const END = 2;
+        function row(letter, start, end) {
+            if (end === undefined) {
+                end = start;
+                start = 1;
+            }
+            if (letter.length > 1) {
+                const result = [];
+                const end_code = letter.charCodeAt(2);
+                for (let code = letter.charCodeAt(0); code <= end_code; ++code) {
+                    result.push(row(String.fromCharCode(code), start, end));
+                }
+                return result;
+            }
+            return [letter, start, end];
+        }
+        const rooms = {
+            GH242: [
+                row("A", 9),
+             ...row("B-D", 22),
+             ...row("E-H", 21),
+             ...row("J-N", 22),
+             ...row("P-S", 23),
+             ...row("T-U", 24),
+                row("V", 8),
+            ],
+            CENTR101: [
+                row("A", 4),
+                row("B", 15),
+                row("C", 19),
+                row("D", 22),
+                row("E", 24),
+                row("F", 27),
+                row("G", 29),
+                row("H", 32),
+                row("J-K", 35),
+                row("L", 38),
+                row("M", 15),
+            ],
+        }
+        function getRoomIndexMapping() {
+            const mapping = {};
+            let next_index = 0;
+            for (const key in rooms) {
+                mapping[key] = next_index;
+                next_index += 1;
+            }
+            return mapping;
+        }
+        const room_index = getRoomIndexMapping();
+        function getDailyRandomValues(n) {
+            const key = "ucsd-seating";
+            const today = new Date().toISOString().split('T')[0]; // e.g. "2025-11-04"
+            const stored = JSON.parse(localStorage.getItem(key));
+
+            if (stored && stored.date === today && stored.values.length === n)
+                return stored.values;
+
+            const newValues = [];
+            for (let i = 0; i < n; ++i) {
+                newValues.push(Math.random());
+            }
+            localStorage.setItem(key, JSON.stringify({
+                date: today,
+                values: newValues
+            }));
+            return newValues;
+        }
+
+        function randomInteger(seed, start, end) {
+            return Math.floor(seed * (end - start + 1)) + start;
+        }
+        function getRandomSeat() {
+            room_rows = rooms[select.value];
+            const ri = room_index[select.value];
+            const seed = getDailyRandomValues(2*Object.keys(rooms).length).slice(2*ri);
+            const i = randomInteger(seed[0], 0, room_rows.length);
+            const r = room_rows[i];
+            const n = randomInteger(seed[1], r[START], r[END]);
+            console.log("Selected", r[LETTER], n);
+            seat.innerText = `${r[LETTER]}${n}`;
+        }
+        select.addEventListener("change", () => getRandomSeat());
+        getRandomSeat();
+    </script>
+</html>
