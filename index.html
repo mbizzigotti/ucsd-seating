@@ -109,8 +109,13 @@
             return newValues;
         }
 
-        function randomInteger(seed, start, end) {
-            return Math.floor(seed * (end - start + 1)) + start;
+        // PDF ~ 1 / sqrt(x)
+        function invCDF(x) {
+            return x * x;
+        }
+        function randomInteger(normalized, start, end) {
+            const t = invCDF(normalized);
+            return Math.floor(t * (end - start + 1)) + start;
         }
         function getRandomSeat() {
             room_rows = rooms[select.value];
